@@ -124,9 +124,15 @@ func (App *Application) GetEntry(Info Content) (Body []byte, err error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf(objects_url, App.UniversalID)+fmt.Sprintf("?datastoreName=%v&entryKey=%v", Info.Datastore_Name, Info.Entry_Key), nil)
 	req.Header.Add("x-api-key", App.APIKey)
 	resp, err := http.DefaultClient.Do(req)
-	if err == nil && resp.StatusCode == 200 {
-		Body, err = io.ReadAll(resp.Body)
-		return
+	if err == nil {
+		switch resp.StatusCode {
+		case 200, 204:
+			Body, err = io.ReadAll(resp.Body)
+			return
+		default:
+			Body, err = io.ReadAll(resp.Body)
+			return nil, errors.New(fmt.Sprintf(`Error: Unknown Status Code %v | %v`, resp.StatusCode, string(Body)))
+		}
 	} else {
 		return nil, err
 	}
